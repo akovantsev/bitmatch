@@ -17,6 +17,15 @@ Yet another cond-like macro.
   (if (bar? y) c (if (baz? x) a :default)))
 ``` 
 
+## Install
+
+```clojure
+;; in deps.edn
+{:deps {github-akovantsev/bitmatch
+        {:git/url "https://github.com/akovantsev/bitmatch"
+         :sha     "e006d9da111d81c7426cc791116e3bfbd36a4411"}}} ;; actual sha
+```
+
 ## Why
 
 Prunes branches: above, notice just 1 `(baz? x)` test instead of 4.
@@ -86,13 +95,3 @@ This means:
                       ^----------------- [1 1] b
       ```
     Sometimes this makes things hard to reason about, but so does `cond` clauses' order ¯\_(ツ)_/¯.
-
-
-## Install 
-
-```clojure
-;; in deps.edn
-{:deps {github-akovantsev/bitmatch
-        {:git/url "https://github.com/akovantsev/bitmatch"
-         :sha     ""}}} ;; actual sha
-```
