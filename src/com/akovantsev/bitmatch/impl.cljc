@@ -38,20 +38,16 @@
         triples    (map-indexed vector pairs)
 
         split      (fn split [[pred idx]]
-                     (if-not (vector? pred)
-                       [[pred idx]]
-                       (if (-> pred first string?)
-                         (mapv vector pred (repeat idx))
-                         (let [preds (->> pred (split-at len) (remove empty?) (map str/join))]
-                           (map vector preds (repeat idx))))))
+                     (let [preds (->> pred (split-at len) (remove empty?) (map str/join))]
+                       (map vector preds (repeat idx))))
 
         nums       (->> triples (map (fn f3 [[idx [pred then]]] [idx then])) (into {}))
-        pairs      (->> triples (map (fn f4 [[idx [pred then]]] [pred idx])) (mapcat split) (sort-by first by-specificity))
+        pairs      (->> triples (map (fn f4 [[idx [pred then]]] [(replace '{- _} pred) idx])) (mapcat split) (sort-by first by-specificity))
 
         duplicates (->> pairs (map first) frequencies (remove #(-> % val (= 1))) (map key))
 
         _          (when-not (empty? duplicates)
-                     (let [f #(-> % vec print with-out-str (str " duplicate"))
+                     (let [f    #(-> % vec print with-out-str (str " duplicate"))
                            rows (str/join "\n  " (map f duplicates))
                            msg  (str "(bitmatch " predicates "\n  " rows ")" predicates rows)]
                        (throw (ex-info msg {}))))
@@ -80,6 +76,7 @@
                            x))))
 
         m          (->> pairs (reduce reg {}) (walk/postwalk wf))
+
         !unhandled (atom [])
 
         make       (fn make [path m]
