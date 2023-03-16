@@ -23,7 +23,7 @@ Yet another cond-like macro.
 ;; in deps.edn
 {:deps {github-akovantsev/bitmatch
         {:git/url "https://github.com/akovantsev/bitmatch"
-         :sha     "e006d9da111d81c7426cc791116e3bfbd36a4411"}}} ;; actual sha
+         :sha     "275ac6f26fde20b22453b7ddca10b362f0a62660"}}} ;; actual sha
 ```
 
 ## Why
