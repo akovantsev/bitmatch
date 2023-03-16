@@ -74,13 +74,13 @@ This means:
 - clauses' order does not matter – group and reorder for readability
 - predicates' order matters:
     - for execution order: which pred is tested first
-    - for pattern specificity: may affect wich out of several matching
+    - for pattern specificity: may affect which out of several matching
       patterns will actually be used, e.g:
       ```clojure
       (bitmatch [foo bar]      vs.  (bitmatch [foo bar]
-      [1 _] a                       [_ 1] a
-      [_ 1] b                       [1 _] b
-      [0 0] d)                      [0 0] d)
+        [1 _] a                       [_ 1] a
+        [_ 1] b                       [1 _] b
+        [0 0] d)                      [0 0] d)
 
       (if foo a (if bar b d))  vs.  (if bar b (if foo a d))
 
