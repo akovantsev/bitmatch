@@ -53,7 +53,7 @@
         _          (when-not (empty? duplicates)
                      (let [f #(-> % vec print with-out-str (str " duplicate"))
                            rows (str/join "\n  " (map f duplicates))
-                           msg  (format "(bitmatch %s\n  %s)" predicates rows)]
+                           msg  (str "(bitmatch " predicates "\n  " rows ")" predicates rows)]
                        (throw (ex-info msg {}))))
 
         reg        (fn reg [m [pred then]]
@@ -116,5 +116,5 @@
     (if (empty? unhandled)
       code
       (let [rows (str/join "\n  " (map str unhandled (repeat " unhandled")))
-            msg  (format "(bitmatch %s\n  %s)" predicates rows)]
+            msg  (str "(bitmatch " predicates "\n  " rows ")")]
         (throw (ex-info msg {'unhandled unhandled}))))))
