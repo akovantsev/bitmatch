@@ -17,6 +17,44 @@ Yet another cond-like macro.
   (if (bar? y) c (if (baz? x) a :default)))
 ``` 
 
+<br>Now you can rebind syntactic symbols to your liking with `binding`.
+<br>Default bindings are:
+```clojure
+(def ^:dynamic *truthy* '#{1 T +})
+(def ^:dynamic *falsy*  '#{0 F -})
+(def ^:dynamic *any*    '#{_ .})
+```
+
+<br>Now supports enums (case).
+<br>Each case junction requires default (`_` or `.`) handled explicitly,
+so it yells at you at read time instead of at runtime like `case`:
+
+```clojure
+(macroexpand-1
+  '(bitmatch
+     [(odd? x) (enum1 y)]
+     [- \x] "yo"
+     [- \y] "sup"
+     [.  .] "case default"))
+
+;=>
+(if (odd? x)
+  "case default"
+  (case (enum1 y)
+    \x "yo"
+    \y "sup"
+    "case default"))
+
+(meta *1)
+;=>
+{::tree (quote
+          {TRUTHY {DEFAULT "case default"},
+           FALSY  {\x      "yo"
+                   \y      "sup"
+                   DEFAULT "case default"}})}
+```
+
+
 ## Install
 
 ```clojure
