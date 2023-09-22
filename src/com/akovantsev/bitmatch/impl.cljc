@@ -42,11 +42,15 @@
 
 (sort by-specificity '[[0 _] [0 1] [_ _] [1 1] [_ 1]])
 
+(defn spy [x] (println x) x)
+(defn -contains? [coll x]
+  (or (contains? coll x)
+      (contains? coll (-> x str first str symbol))))
 
-(defn TRUTHY? [x] (contains? *truthy* x))
-(defn FALSY? [x] (contains? *falsy* x))
+(defn TRUTHY? [x] (-contains? *truthy* x))
+(defn FALSY? [x] (-contains? *falsy* x))
 (defn BOOL? [x] (or (TRUTHY? x) (FALSY? x)))
-(defn ANY? [x] (contains? *any* x))
+(defn ANY? [x] (-contains? *any* x))
 
 
 (defn get-type [pred]
@@ -67,6 +71,14 @@
         [. + . . + b]
         [a . - . - .]
         [c . - . + +]])))
+
+(assert
+  (= '[ENUM BOOL BOOL UNUSED BOOL ENUM]
+    (get-types
+      '[[. .... .... . . .]
+        [. +foo .... . + b]
+        [a .... -bar . - .]
+        [c .... -bar . + +]])))
 
 
 (defn expand [types xs]
