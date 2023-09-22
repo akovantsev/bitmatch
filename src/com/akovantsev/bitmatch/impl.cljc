@@ -1,10 +1,12 @@
 (ns com.akovantsev.bitmatch.impl
   (:require
-   #_[com.akovantsev.pp :as pipi]
+   ;[#?(:cljs cljs.pprint :clj clojure.pprint) :as pp]
+   ;[com.akovantsev.pp :as pipi]
    [clojure.string :as str]
    [clojure.walk :as walk]))
 
-;(set! *print-namespace-maps* false)
+(set! *print-namespace-maps* false)
+;(defn spy [x] (pp/pprint x) x)
 #_
 (defmacro spy [x]
   (let [x#    (gensym)
@@ -20,7 +22,8 @@
         srcUrl# (when cljs?# (list 'js* (str "//# sourceURL=" path#)))]
     `(let [~x# ~x]
        ~srcUrl#
-       (println (str ~pref# (pipi/string ~x#) "\n"))
+       (binding [pipi/*limit-seq-elements* nil]
+         (println (str ~pref# (pipi/string ~x#) "\n")))
        ~x#)))
 
 
@@ -29,20 +32,7 @@
 (def ^:dynamic *any*    '#{_ .})
 
 
-(defn vagueness [xs] (->> xs (filter *any*) count))
 
-(defn by-specificity [x y]
-  (compare
-    [(vagueness x) (pr-str x)]
-    [(vagueness y) (pr-str y)]))
-
-(sort [1 0 nil])
-
-(group-by vagueness '[[0 _] [0 1] [_ _] [1 1] [_ 1]])
-
-(sort by-specificity '[[0 _] [0 1] [_ _] [1 1] [_ 1]])
-
-(defn spy [x] (println x) x)
 (defn -contains? [coll x]
   (or (contains? coll x)
       (contains? coll (-> x str first str symbol))))
@@ -51,6 +41,22 @@
 (defn FALSY? [x] (-contains? *falsy* x))
 (defn BOOL? [x] (or (TRUTHY? x) (FALSY? x)))
 (defn ANY? [x] (-contains? *any* x))
+
+(defn specificity [x]
+  (mapv #(if (ANY? %) 0 -1) x))
+
+(defn by-specificity [x y]
+  (compare (specificity x) (specificity y)))
+
+(sort-by identity by-specificity
+;(map specificity
+ '[[:word \} .] [. . nil] [. \# .]
+   [. \( ..] [. \) .] [. \; .]
+   [. \[ ..] [. \] .] [. \{ ..]
+   [. \} .] [..... \' .]
+   [..... \newline .] [..... \space .]
+   [:comm . .] [:err . .] [:str . .]
+   [:vec . .] [. . .]])
 
 
 (defn get-type [pred]
@@ -128,6 +134,8 @@
         nums       (->> triples (map (fn f3 [[idx [pred then]]] [idx then])) (into {}))
         pairs      (->> triples (map (fn f4 [[idx [pred then]]] [pred idx])) (mapcat split) (sort-by first by-specificity))
 
+        ;_ (spy pairs)
+
         types      (->> pairs (map first) get-types)
         duplicates (->> pairs (map first) frequencies (remove #(-> % val (= 1))) (map key))
 
@@ -161,7 +169,7 @@
                            t     (get types idx)
                            pred  (get predicates idx)
                            idx+  (inc idx)
-                           [+defa -defa]  (+- defa)
+                           [+defa -defa] (+- defa)
                            [+done -done] (+- (= idx+ len))
                            path_ (conj path '.)
                            path1 (conj path '+)
@@ -193,20 +201,21 @@
                                [+enum -enum]  (+- enum)
                                kvdone (fn f6 [[k v]] [k (get nums v)])
                                kvmake (fn f7 [[k v]] [k (make (conj path k) v)])]
-                           ;(spy [t +enum +defa +done])
+                           ;(spy [t +enum +defa -defa +done defa path path_])
                            (cond
                              (and -enum -defa) (throw (ex-info (str "oops: (and -done -enum -def) " path " " m) {}))
                              (and +enum -defa) (swap! !unhandled conj path_)
-                             (and +enum +defa -done) (concat ['case pred] (mapcat kvmake enum) [(make path_ defa)])
-                             (and +enum +defa +done) (concat ['case pred] (mapcat kvdone enum) [(get nums defa)])
+                             (and +enum +defa -done) (doall (concat ['case pred] (mapcat kvmake enum) [(make path_ defa)]))
+                             (and +enum +defa +done) (doall (concat ['case pred] (mapcat kvdone enum) [(get nums defa)]))
                              (and -enum +defa -done) (make path_ defa)
                              (and -enum +defa +done) (get nums defa))))))
 
         code       (make [] m)
+        tree       (walk/postwalk-replace nums m)
         unhandled  @!unhandled]
 
     (if (empty? unhandled)
-      (with-meta code {::tree  (list 'quote (walk/postwalk-replace nums m))})
+      (with-meta code {::tree  (list 'quote tree)})
       (let [ext  identity ;#(vec (take len (concat % (repeat '.))))
             rows (str/join "\n  " (map str (map ext unhandled) (repeat " unhandled")))
             msg  (str "(bitmatch " predicates "\n  " rows ")")]

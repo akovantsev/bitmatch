@@ -62,4 +62,8 @@
                         ^----------------- [1 1] b
         "
   [predicates & pairs]
-  (impl/bitmatch predicates pairs false))
+  (let [form (impl/bitmatch predicates pairs false)
+        tree (-> form meta ::impl/tree)]
+     (if-let [sym (-> &form meta :tag)]
+       `(do (def ~sym ~tree) ~form)
+       `~form)))
