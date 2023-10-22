@@ -233,7 +233,7 @@
         m          (reduce reg {} pairs)
 
         !unhandled (atom [])
-        !implicit  (atom [])
+        !implicit  (atom {})
 
         +-         (fn [x] [(boolean x) (not x)])
         make       (fn make [path m]
@@ -281,7 +281,7 @@
                            ;(spy (locals))
                            ;(spy [t +enum +defa -defa +done defa path path_])
                            (if defa
-                             (swap! !implicit concat immpli)
+                             (swap! !implicit merge (zipmap immpli (repeat path_)))
                              (swap! !unhandled concat immpli))
                            (cond
                              (and -enum -defa) (throw (ex-info (str "oops: (and -done -enum -def) " path " " m) {}))
@@ -294,17 +294,17 @@
         code       (make [] m)
         tree       (walk/postwalk-replace nums m)
         padrdot    (fn [vek] (subvec (into vek (repeat len '.)) 0 len))
-        unhandled  (sort by-specificity (map padrdot @!unhandled))
-        implicit   (sort by-specificity (map padrdot @!implicit))
+        unhandled  (->> @!unhandled (map padrdot) (sort by-specificity))
+        implicit   (->> @!implicit (map #(reverse (map padrdot %))) (sort-by first by-specificity))
         deduped    (->> pairs (map (fn [[pred return]] [pred (nums return)])))
         unhstr     (pretty-branches-str (map vector unhandled (repeat "unhandled")))
-        implstr    (pretty-branches-str (map vector implicit (repeat "handled implicitly")))
+        implstr    (pretty-branches-str implicit);(map vector implicit (repeat "handled implicitly")))
         dedupedstr (pretty-branches-str deduped)
         msg        (str "(bitmatch " predicates
                      (when (seq unhandled)
                        (str "\n error:\n" unhstr "\n"))
                      (when (seq implicit)
-                       (str "\n warning:\n" implstr "\n"))
+                       (str "\n handles implicitly:\n" implstr "\n"))
                      "\n declared:\n" dedupedstr
                      ")")]
     ;(spy (locals m))

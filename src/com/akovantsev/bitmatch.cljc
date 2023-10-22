@@ -84,7 +84,7 @@
   (macroexpand-1 '
      ^?
      (bitmatch [\a \b \c]
-       [(::Aff :B .) (two .) -
+       [(:Aff :B .) (two .) -
         :C          .       .]
        true
        ;[:B \a +]  'kek
