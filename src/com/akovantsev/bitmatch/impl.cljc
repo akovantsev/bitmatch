@@ -280,8 +280,9 @@
                                kvmake (fn f7 [[k v]] [k (make (conj path k) v)])]
                            ;(spy (locals))
                            ;(spy [t +enum +defa -defa +done defa path path_])
-                           (when defa
-                             (swap! !implicit concat immpli))
+                           (if defa
+                             (swap! !implicit concat immpli)
+                             (swap! !unhandled concat immpli))
                            (cond
                              (and -enum -defa) (throw (ex-info (str "oops: (and -done -enum -def) " path " " m) {}))
                              (and +enum -defa) (swap! !unhandled conj path_)
@@ -293,8 +294,8 @@
         code       (make [] m)
         tree       (walk/postwalk-replace nums m)
         padrdot    (fn [vek] (subvec (into vek (repeat len '.)) 0 len))
-        unhandled  (map padrdot @!unhandled)
-        implicit   (map padrdot @!implicit)
+        unhandled  (sort by-specificity (map padrdot @!unhandled))
+        implicit   (sort by-specificity (map padrdot @!implicit))
         deduped    (->> pairs (map (fn [[pred return]] [pred (nums return)])))
         unhstr     (pretty-branches-str (map vector unhandled (repeat "unhandled")))
         implstr    (pretty-branches-str (map vector implicit (repeat "handled implicitly")))
