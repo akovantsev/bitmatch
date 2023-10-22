@@ -62,8 +62,40 @@
                         ^----------------- [1 1] b
         "
   [predicates & pairs]
-  (let [form (impl/bitmatch predicates pairs false)
-        tree (-> form meta ::impl/tree)]
-     (if-let [sym (-> &form meta :tag)]
-       `(do (def ~sym ~tree) ~form)
-       `~form)))
+  (impl/bitmatch predicates pairs false (-> &form meta :tag)))
+
+
+(defmacro with-subs [pairs body]
+  `~(impl/with-subs pairs body))
+
+
+
+#_
+(macroexpand-1 '
+  (with-subs [a [1 2 3]
+              b [4 5 6]
+              c (3 6 a - b)
+              d (a b c 7 - 5)]
+    (bitmatch [foo bar]
+      [(0 a b - 3 4) (a d - c)] pew)))
+
+#_
+(with-subs [two [\a \b]]
+  (macroexpand-1 '
+     ^?
+     (bitmatch [\a \b \c]
+       [(::Aff :B .) (two .) -
+        :C          .       .]
+       true
+       ;[:B \a +]  'kek
+       ;[:B \b +]  'sup
+       ;[.  . +]  :yo
+
+       [:B . .]
+       :wow
+
+       [:Aff (two .) +]
+       false
+
+       [. (two) +]
+       (some default))))
