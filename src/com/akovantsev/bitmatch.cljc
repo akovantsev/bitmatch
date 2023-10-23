@@ -84,18 +84,19 @@
   (macroexpand-1 '
      ^?
      (bitmatch [\a \b \c]
-       [(:Aff :B .) (two .) -
+       [(:Aff  .) (two .) -
         :C          .       .]
        true
        ;[:B \a +]  'kek
-       ;[:B \b +]  'sup
+       [:B \b +]  'sup
        ;[.  . +]  :yo
 
-       [:B . .]
+       [:B . .
+        . . .]
        :wow
 
-       [:Aff (two .) +]
-       false
+       ;[:Aff (two .) +]
+       ;false
 
        [. (two) +]
        (some default))))

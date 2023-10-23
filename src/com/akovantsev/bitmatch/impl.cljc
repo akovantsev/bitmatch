@@ -174,10 +174,14 @@
 
 
 (defn pretty-branches-str [pairs]
-  (let [maxlen  (fn [syms] (->> syms (map pr-str) (map count) (reduce max 0)))
-        lens    (->> pairs (map first) (apply map vector) (map maxlen))
-        pp-pair (fn [[pred return]]
-                  (str "  [" (str/join " " (map padright lens pred)) "]  " return))]
+  (let [maxlen   (fn [syms] (->> syms (map pr-str) (map count) (reduce max 0)))
+        lens     (->> pairs (map first) (apply map vector) (map maxlen))
+        str-pred (fn [pred] (str "[" (str/join " " (map padright lens pred)) "]"))
+        pp-pair  (fn [[pred return]]
+                   (str "  " (str-pred pred) "  "
+                     (if (-> return meta ::handler)
+                       (str-pred return)
+                       return)))]
     (->> pairs (map pp-pair) (str/join "\n"))))
 
 
@@ -295,17 +299,15 @@
         tree       (walk/postwalk-replace nums m)
         padrdot    (fn [vek] (subvec (into vek (repeat len '.)) 0 len))
         unhandled  (->> @!unhandled (map padrdot) (sort by-specificity))
-        implicit   (->> @!implicit (map #(reverse (map padrdot %))) (sort-by first by-specificity))
+        unhandled2 (map vector unhandled (repeat "UNHANDLED"))
         deduped    (->> pairs (map (fn [[pred return]] [pred (nums return)])))
-        unhstr     (pretty-branches-str (map vector unhandled (repeat "unhandled")))
-        implstr    (pretty-branches-str implicit);(map vector implicit (repeat "handled implicitly")))
-        dedupedstr (pretty-branches-str deduped)
+        implicit   (->> @!implicit (map (fn [[pred handler]] [(padrdot pred) (with-meta (padrdot handler) {::handler true})])))
+        all        (sort-by first by-specificity (concat deduped implicit unhandled2))
+        unhstr     (pretty-branches-str unhandled2)
         msg        (str "(bitmatch " predicates
                      (when (seq unhandled)
                        (str "\n error:\n" unhstr "\n"))
-                     (when (seq implicit)
-                       (str "\n handles implicitly:\n" implstr "\n"))
-                     "\n declared:\n" dedupedstr
+                     "\n all:\n" (pretty-branches-str all)
                      ")")]
     ;(spy (locals m))
     (when debug?
@@ -313,7 +315,7 @@
     (if (empty? unhandled)
       (with-meta code {::tree  (list 'quote tree)})
       (throw (ex-info msg {'unhandled unhandled
-                           'implicit  implicit
+                           'all       all
                            'tree      tree})))))
 
 
