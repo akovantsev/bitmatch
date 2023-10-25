@@ -45,7 +45,8 @@
 
 (defn -contains? [coll x]
   (or (contains? coll x)
-      (contains? coll (-> x str first str symbol))))
+      (and (symbol? x)
+           (contains? coll (-> x str first str symbol)))))
 
 (defn TRUTHY? [x] (-contains? *truthy* x))
 (defn FALSY? [x] (-contains? *falsy* x))
