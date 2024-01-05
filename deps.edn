@@ -1,8 +1,8 @@
 {:paths   ["src"]
- :deps    {}
- :aliases {:dev  {:extra-deps  {github-akovantsev/pp
-                                {:git/url "https://github.com/akovantsev/pp"
-                                 :git/sha "1357db37ce27419441696c6701ae27f163e665ea"}}}
+ :deps    {github-akovantsev/pp
+           {:git/url "https://github.com/akovantsev/pp"
+            :git/sha "1357db37ce27419441696c6701ae27f163e665ea"}}
+ :aliases {:dev  {:extra-deps  {}}
            :cljs {:extra-paths ["test" "cljs-test-runner-out/gen"]
                   :extra-deps  {org.clojure/clojure       {:mvn/version "1.11.1"}
                                 org.clojure/clojurescript {:mvn/version "1.11.60"}

@@ -62,7 +62,7 @@
                         ^----------------- [1 1] b
         "
   [predicates & pairs]
-  (impl/bitmatch predicates pairs false (-> &form meta :tag)))
+  (impl/bitmatch predicates pairs false (meta &form)))
 
 
 (defmacro with-subs [pairs body]
@@ -70,6 +70,13 @@
 
 
 
+#_
+(let [x 1]
+  ^?
+  ^{:*truthy* #{t}}
+  (bitmatch [x]
+    [t] 1
+    [-] 2))
 #_
 (macroexpand-1 '
   (with-subs [a [1 2 3]
@@ -100,3 +107,11 @@
 
        [. (two) +]
        (some default))))
+
+#_
+(macroexpand-1 '
+        ;^?
+  (bitmatch [a b c]
+    [. . .] 1
+    [9 9 9] 2
+    [9 . .] 3))

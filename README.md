@@ -17,13 +17,27 @@ Yet another cond-like macro.
   (if (bar? y) c (if (baz? x) a :default)))
 ``` 
 
-<br>Now you can rebind syntactic symbols to your liking with `binding`.
-<br>Default bindings are:
+<br>Now you can rebind syntactic symbols to your liking ~~with binding~~.
+<br>Defaults are:
 ```clojure
 (def ^:dynamic *truthy* '#{1 T +})
 (def ^:dynamic *falsy*  '#{0 F -})
 (def ^:dynamic *any*    '#{_ .})
 ```
+Apparently `binding` works for `macroexpand-1`, but does not work for macroexpansion of "actual" source code,
+so you gotta supply overrides as meta instead (note keys are keywords, not syms; and unquoted values):
+```clojure
+(let [x "truthy"]
+  ^?                ;; btw, ^anysymbol is a "debug shortcut"
+  ^{:*truthy* #{t}} ;; vals replace defaults, not amend.
+  (bitmatch [x]
+    [t] 1
+    [-] 2))
+;; <redacted printed out debug info, 
+;; like match tree, column types and domains>
+=> 1
+```
+
 
 <br>Now supports enums (case).
 <br>Each case junction requires default (`_` or `.`) handled explicitly,

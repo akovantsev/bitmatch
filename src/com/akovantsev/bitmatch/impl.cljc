@@ -2,13 +2,13 @@
   (:require
    ;[#?(:cljs cljs.pprint :clj clojure.pprint) :as pp]
    [clojure.walk :as walk]
-   ;[com.akovantsev.pp :as pipi]
+   [com.akovantsev.pp :as pipi]
    [clojure.string :as str]
    [clojure.walk :as walk]))
 
 (set! *print-namespace-maps* false)
 ;(defn spy [x] (pp/pprint x) x)
-#_
+;#_
 (defmacro spy [x]
   (let [x#    (gensym)
         path# (or (-> x meta :file)  ;;for cljs
@@ -188,10 +188,14 @@
 
 
 
-(defn bitmatch [predicates pairs precise? debug?]
-  (assert (-> predicates vector?))
-  (assert (-> pairs count even?))
-  (let [len        (count predicates)
+(defn bitmatch [predicates pairs precise? mmeta]
+ (assert (-> predicates vector?))
+ (assert (-> pairs count even?))
+ (binding [*any*    (-> mmeta :*any* (or *any*))
+           *falsy*  (-> mmeta :*falsy* (or *falsy*))
+           *truthy* (-> mmeta :*truthy* (or *truthy*))]
+  (let [debug?     (-> mmeta :tag boolean)
+        len        (count predicates)
         pairs      (partition 2 pairs)
         triples    (map-indexed vector pairs)
 
@@ -310,14 +314,15 @@
                        (str "\n error:\n" unhstr "\n"))
                      "\n all:\n" (pretty-branches-str all)
                      ")")]
-    ;(spy (locals m))
     (when debug?
-      (println msg))
+      (println msg)
+      (println)
+      (spy (locals)))
     (if (empty? unhandled)
       (with-meta code {::tree  (list 'quote tree)})
       (throw (ex-info msg {'unhandled unhandled
                            'all       all
-                           'tree      tree})))))
+                           'tree      tree}))))))
 
 
 (defn substitute [groups lst]
