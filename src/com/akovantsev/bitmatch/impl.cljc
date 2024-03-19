@@ -245,6 +245,9 @@
         !implicit  (atom {})
 
         +-         (fn [x] [(boolean x) (not x)])
+        done       (if debug?
+                     (fn done [p v] (list 'do (list 'println (pr-str p)) (get nums v)))
+                     (fn done [p v] (get nums v)))
         make       (fn make [path m]
                      (let [defa  (get m 'DEFAULT)
                            idx   (count path)
@@ -256,11 +259,12 @@
                            path_ (conj path '.)
                            path+ (conj path '+)
                            path- (conj path '-)]
+
                        (case t
                          UNUSED
                          (cond
                            -done (make path_ defa)
-                           +done (get nums defa))
+                           +done (done path_ defa))
 
                          BOOL
                          (let [then  (get m 'TRUTHY)
@@ -274,9 +278,9 @@
                              (and -then +else) (swap! !unhandled conj path+)
                              (and +then -else) (swap! !unhandled conj path-)
                              (and +then +else +same -done) (make path_ then)
-                             (and +then +else +same +done) (get nums then)
+                             (and +then +else +same +done) (done path_ then)
                              (and +then +else -same -done) (list 'if pred (make path+ then) (make path- else))
-                             (and +then +else -same +done) (list 'if pred (get nums then) (get nums else))))
+                             (and +then +else -same +done) (list 'if pred (done path+ then) (done path- else))))
 
                          ENUM
                          (let [enum   (not-empty (dissoc m 'DEFAULT 'TRUTHY 'FALSY))
@@ -285,7 +289,7 @@
                                immpli (->> domain
                                         (remove (-> enum keys set))
                                         (map #(conj path %)))
-                               kvdone (fn f6 [[k v]] [k (get nums v)])
+                               kvdone (fn f6 [[k v]] [k (done (conj path k) v)])
                                kvmake (fn f7 [[k v]] [k (make (conj path k) v)])]
                            ;(spy (locals))
                            ;(spy [t +enum +defa -defa +done defa path path_])
@@ -296,9 +300,9 @@
                              (and -enum -defa) (throw (ex-info (str "oops: (and -done -enum -def) " path " " m) {}))
                              (and +enum -defa) (swap! !unhandled conj path_)
                              (and +enum +defa -done) (doall (concat ['case pred] (mapcat kvmake enum) [(make path_ defa)]))
-                             (and +enum +defa +done) (doall (concat ['case pred] (mapcat kvdone enum) [(get nums defa)]))
+                             (and +enum +defa +done) (doall (concat ['case pred] (mapcat kvdone enum) [(done path_ defa)]))
                              (and -enum +defa -done) (make path_ defa)
-                             (and -enum +defa +done) (get nums defa))))))
+                             (and -enum +defa +done) (done path_ defa))))))
 
         code       (make [] m)
         tree       (walk/postwalk-replace nums m)
