@@ -2,39 +2,11 @@
   (:require
    ;[#?(:cljs cljs.pprint :clj clojure.pprint) :as pp]
    [clojure.walk :as walk]
-   [com.akovantsev.pp :as pipi]
+   [akovantsev.pp :as pp]
    [clojure.string :as str]
    [clojure.walk :as walk]))
 
 (set! *print-namespace-maps* false)
-;(defn spy [x] (pp/pprint x) x)
-;#_
-(defmacro spy [x]
-  (let [x#    (gensym)
-        path# (or (-> x meta :file)  ;;for cljs
-                (-> *file* (str/split #"/") (->> (drop-while (complement #{"src"})) rest (str/join "/"))))
-        ;//# sourceURL=links.lights.cljs
-        pref# (format ";; %s %s:%s\n;; %s\n"
-                path#
-                (-> x meta :line)
-                (-> x meta :column)
-                (pr-str x))
-        cljs?#  (:ns &env)
-        srcUrl# (when cljs?# (list 'js* (str "//# sourceURL=" path#)))]
-    `(let [~x# ~x]
-       ~srcUrl#
-       (binding [pipi/*limit-seq-elements* nil]
-         (println (str ~pref# (pipi/string ~x#) "\n")))
-       ~x#)))
-
-
-(defmacro locals [& banned]
-  ;; https://gist.github.com/noisesmith/3490f2d3ed98e294e033b002bc2de178
-  (let [ks (->> &env keys
-             (remove #{'_})
-             (remove #(re-matches #".+__\d+" (name %)))
-             (remove (set banned)))]
-    (zipmap (map #(list 'quote %) ks) ks)))
 
 
 (def ^:dynamic *truthy* '#{1 T +})
@@ -321,7 +293,7 @@
     (when debug?
       (println msg)
       (println)
-      (spy (locals)))
+      (pp/$ (pp/locals +- reg padrdot make done split !unhandled !implicit)))
     (if (empty? unhandled)
       (with-meta code {::tree  (list 'quote tree)})
       (throw (ex-info msg {'unhandled unhandled
